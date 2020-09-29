@@ -60,7 +60,7 @@ Process {
 
             [parameter(Mandatory=$false, HelpMessage="Name of the log file that the entry will written to.")]
             [ValidateNotNullOrEmpty()]
-            [string]$FileName = "log_RemoveFeaturesOnDemand.txt"
+            [string]$FileName = "ilog_RemoveFeaturesOnDemand.txt"
         )
         # Logbestand Locatie
         $LogFilePath = Join-Path -Path C:\IntuneLogs -ChildPath "$($FileName)"
