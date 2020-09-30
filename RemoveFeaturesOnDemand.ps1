@@ -14,16 +14,18 @@
     Author:      Mark Messink
     Contact:     
     Created:     2020-07-07
-    Updated:     
+    Updated:     2020-09-30
 
     Version history:
     1.0.0 - (2020-07-07) First script, Windows 10 version 2004
+	1.0.1 - (2020-09-30) Windows 10 version 20H2
 #>
 Begin {
     # White list of Features On Demand packages
 	# Get-WindowsCapability -online 
 	$WhiteListOnDemand = @(
-		# Preinstalled FODs
+		
+	##### Preinstalled FODs #####
 			"DirectX.Configuration.Database",
 			"Browser.InternetExplorer",
 			"MathRecognizer",
@@ -39,7 +41,7 @@ Begin {
 			"Microsoft.Windows.WordPad",
 			"Media.WindowsMediaPlayer",
 			
-		# FODs that shouldn't be removed
+	##### FODs that shouldn't be removed #####
 			"Windows.Client.ShellComponents"		
 			"Language",
 			"Hello.Face"	
