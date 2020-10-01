@@ -22,7 +22,7 @@
 #>
 Begin {
     # White list of Features On Demand packages
-	# Get-WindowsCapability -online 
+	# Create new list --> 'Get-WindowsCapability -online | FT Name'
 	$WhiteListOnDemand = @(
 		
 	##### Preinstalled FODs #####
