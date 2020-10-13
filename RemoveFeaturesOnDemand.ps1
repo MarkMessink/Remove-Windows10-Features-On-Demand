@@ -86,7 +86,7 @@ Process {
     # Initial logging
 	$date = get-date
 	Write-LogEntry -Value "-------------------------------------------------------------------------------"
-	Write-LogEntry -Value ""Script Version: 20H2 (2020-09-30)""
+	Write-LogEntry -Value "Script Version: 20H2 (2020-09-30)"
     Write-LogEntry -Value "$date"
 	Write-LogEntry -Value "Starting Features on Demand removal process"
 	Write-LogEntry -Value "WhiteList: $WhiteListOnDemand"
