@@ -3,8 +3,8 @@
     Remove built-in Features On Demand from Windows 10.
 
 .DESCRIPTION
-    This script will remove all Features-On-Demand die niet in de 'white-list' staan
-	Documentatie: https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/features-on-demand-non-language-fod
+    This script will remove all Features-On-Demand that's not specified in the 'white-list' in this script.
+	Documentation: https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/features-on-demand-non-language-fod
 
 .EXAMPLE
     .\RemoveFeaturesOnDemand.ps1
@@ -13,43 +13,43 @@
     FileName:    RemoveFeaturesOnDemand.ps1
     Author:      Mark Messink
     Contact:     
-    Created:     2020-07-07
-    Updated:     2020-09-30
+    Created:     2020-11-24
+    Updated:     
 
     Version history:
-    1.0.0 - (2020-07-07) First script, Windows 10 version 2004
-	1.0.1 - (2020-09-30) Windows 10 version 20H2
+    1.0.0 - (2020-11-24) First script, Windows 10 version 20H2
+	
+	Create new Whitelist:
+	Get-WindowsCapability -Online | where state -eq installed | FT Name
+
 #>
 Begin {
-    # White list of Features On Demand packages
-	# Create new list --> 'Get-WindowsCapability -online | FT Name'
-	$WhiteListOnDemand = @(
-		
-	##### Preinstalled FODs #####
-			"DirectX.Configuration.Database",
-			"Browser.InternetExplorer",
-			"MathRecognizer",
-			"Microsoft.Windows.Notepad",
-			"OneCoreUAP.OneSync",
-		###	"OpenSSH.Client",
-			"Microsoft.Windows.MSPaint",
-		###	"Microsoft.Windows.PowerShell.ISE",
-			"Print.Management.Console",
-			"App.Support.QuickAssist",
-		###	"App.StepsRecorder",
-			"Print.Fax.Scan",
-			"Microsoft.Windows.WordPad",
-			"Media.WindowsMediaPlayer",
-			
-	##### FODs that shouldn't be removed #####
-			"Windows.Client.ShellComponents"		
-			"Language",
-			"Hello.Face"	
-)
+    $WhiteListedFOD = New-Object -TypeName System.Collections.ArrayList
+   
+<##### Features On Demand #####>   
+	$WhiteListedFOD.AddRange(@(
+	"DirectX.Configuration.Database",
+	"Browser.InternetExplorer",
+	"MathRecognizer",
+	"Microsoft.Windows.Notepad",
+	"OneCoreUAP.OneSync",
+	###	"OpenSSH.Client",
+	"Microsoft.Windows.MSPaint",
+	###	"Microsoft.Windows.PowerShell.ISE",
+	"Print.Management.Console",
+	"App.Support.QuickAssist",
+	###	"App.StepsRecorder",
+	"Print.Fax.Scan",
+	"Microsoft.Windows.WordPad",
+	"Media.WindowsMediaPlayer"
+	))
 
-	# Onliner
-	$WhiteListOnDemand = $WhiteListOnDemand -join "|"
-
+<##### Features On Demand that shouldn't be removed #####>  			
+	$WhiteListedFOD.AddRange(@(	
+	"Windows.Client.ShellComponents",	
+	"Language",
+	"Hello.Face"	
+	))
 }
 
 Process {
@@ -76,56 +76,51 @@ Process {
         }
     }
 
-	# Aanmaken standaard logpath (als deze nog niet bestaat)
+	# Create default logpath (if not exist)
 	$path = "C:\IntuneLogs"
 	If(!(test-path $path))
 	{
       New-Item -ItemType Directory -Force -Path $path
 	}
-
+	
     # Initial logging
 	$date = get-date
 	Write-LogEntry -Value "-------------------------------------------------------------------------------"
-	Write-LogEntry -Value "Script Version: 20H2 (2020-09-30)"
+	Write-LogEntry -Value "Script Version: 20H2 (2020-11-23)"
     Write-LogEntry -Value "$date"
+	Write-LogEntry -Value "-------------------------------------------------------------------------------"
 	Write-LogEntry -Value "Starting Features on Demand removal process"
-	Write-LogEntry -Value "WhiteList: $WhiteListOnDemand"
-
-    # Get Features On Demand that should be removed
-    try {
-        $OSBuildNumber = Get-WmiObject -Class "Win32_OperatingSystem" | Select-Object -ExpandProperty BuildNumber
-
-        # Handle cmdlet limitations for older OS builds
-        if ($OSBuildNumber -le "16299") {
-            $OnDemandFeatures = Get-WindowsCapability -Online -ErrorAction Stop | Where-Object { $_.Name -notmatch $WhiteListOnDemand -and $_.State -like "Installed"} | Select-Object -ExpandProperty Name
+	
+	# Determine packagenames installed FOD
+	$FODArrayList = Get-WindowsCapability -online | where state -eq installed | Select-Object -ExpandProperty Name
+	
+	# Determine packagenames from $WhiteListedFOD
+	$WhiteListedFOD = foreach ($FOD in $WhiteListedFOD) {Get-WindowsCapability -Online -Name $FOD* | where state -eq installed | Select-Object -ExpandProperty Name}
+	
+	# Loop through the list of FOD
+	foreach ($FOD in $FODArrayList) {
+		Write-LogEntry -Value "-------------------------------------------------------------------------------"
+        Write-LogEntry -Value "Processing FOD package: $($FOD)"
+		
+        # If FOD name not in FOD white list, remove FOD
+        if (($FOD -in $WhiteListedFOD)) {
+            Write-LogEntry -Value ">>> Skipping excluded application package: $($FOD)"
         }
-        else {
-            $OnDemandFeatures = Get-WindowsCapability -Online -LimitAccess -ErrorAction Stop | Where-Object { $_.Name -notmatch $WhiteListOnDemand -and $_.State -like "Installed"} | Select-Object -ExpandProperty Name
-        }
-
-        foreach ($Feature in $OnDemandFeatures) {
-            try {
-				Write-LogEntry -Value "-------------------------------------------------------------------------------"
-                Write-LogEntry -Value "Removing Feature on Demand package: $($Feature)"
-
-                # Handle cmdlet limitations for older OS builds
-                if ($OSBuildNumber -le "16299") {
-                    Get-WindowsCapability -Online -ErrorAction Stop | Where-Object { $_.Name -like $Feature } | Remove-WindowsCapability -Online -ErrorAction Stop | Out-Null
+		else {
+		
+		    try {
+                Write-LogEntry -Value "Removing Feature on Demand package: $($FOD)"
+				Get-WindowsCapability -Online -LimitAccess -ErrorAction Stop | Where-Object { $_.Name -like $FOD } | Remove-WindowsCapability -Online -ErrorAction Stop | Out-Null
                 }
-                else {
-                    Get-WindowsCapability -Online -LimitAccess -ErrorAction Stop | Where-Object { $_.Name -like $Feature } | Remove-WindowsCapability -Online -ErrorAction Stop | Out-Null
-                }
-            }
+				
             catch [System.Exception] {
                 Write-LogEntry -Value "Removing Feature on Demand package failed: $($_.Exception.Message)"
-            }
-        }    
-    }
-    catch [System.Exception] {
-        Write-LogEntry -Value "Attempting to list Feature on Demand packages failed: $($_.Exception.Message)"
-    }
-
+				}
+			}
+	}
     # Complete
 	Write-LogEntry -Value "-------------------------------------------------------------------------------"
     Write-LogEntry -Value "Completed Feature on Demand removal process"
+	Write-LogEntry -Value "$date"
+	Write-LogEntry -Value "-------------------------------------------------------------------------------"
 }
