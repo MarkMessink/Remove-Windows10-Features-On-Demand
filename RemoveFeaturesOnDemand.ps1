@@ -121,6 +121,5 @@ Process {
     # Complete
 	Write-LogEntry -Value "-------------------------------------------------------------------------------"
     Write-LogEntry -Value "Completed Feature on Demand removal process"
-	Write-LogEntry -Value "$date"
 	Write-LogEntry -Value "-------------------------------------------------------------------------------"
 }
